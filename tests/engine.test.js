@@ -6,7 +6,7 @@ import {createGame as createRealGame,minimumShips,startBattle,act,botStep,fleetC
 function createGame(options={}){
  const original=options.roster||[];
  const roster=[...original];
- while(roster.length<minimumShips(options.size||12))roster.push({type:'needle'});
+ const filler=['needle','mako','echo'];let fi=0;while(roster.length<minimumShips(options.size||12)){const type=filler[fi++%filler.length];if(roster.filter(r=>r.type===type).length<2)roster.push({type});}
  const g=createRealGame({...options,roster});
  g.players[0].ships=g.players[0].ships.slice(0,original.length);
  g.players[0].cost=fleetCost(original,options.mines||0);
@@ -16,6 +16,7 @@ function game(roster=[{type:'bulwark'}],opts={}){const g=createGame({roster,...o
 function place(s,x,y){const dx=x-s.x,dy=y-s.y;s.cells.forEach(c=>{c.x+=dx;c.y+=dy;});s.x=x;s.y=y;}
 function targetShip(g,type='needle',captain=null){const other=createGame({roster:[{type,captain}]});g.players[1]=other.players[0];return g.players[1].ships[0];}
 function fire(g,c){return act(g,{shipId:g.players[0].ships[0].id,kind:'fire',x:c.x,y:c.y});}
+function variedRoster(count){const types=['needle','mako','echo'];return Array.from({length:count},(_,i)=>({type:types[i%types.length]}));}
 test('costs include escalating mines and captains',()=>assert.equal(fleetCost([{type:'needle',captain:'ward'}],3),16));
 test('reject budget and duplicate captains',()=>{assert.throws(()=>createGame({budget:4,roster:[{type:'mako'}]}));assert.throws(()=>createGame({roster:[{type:'needle',captain:'ward'},{type:'needle',captain:'ward'}]}));});
 test('lower cost fleet opens',()=>{const g=createGame({roster:[{type:'needle'}]});startBattle(g);assert.equal(g.turn,0);});
@@ -42,7 +43,7 @@ test('movement previews follow every facing and block mines',async()=>{const {le
 test('map sizes enforce minimum ships, ignoring captains and mines',()=>{
  for(const [size,count] of [[10,4],[12,5],[16,7],[20,9]]){
   assert.equal(minimumShips(size),count);
-  const roster=Array.from({length:count-1},()=>({type:'needle'}));
+  const roster=variedRoster(count-1);
   roster[0].captain='ward';
   assert.throws(()=>createRealGame({size,budget:90,roster,mines:3}),/requires at least/);
   const valid=createRealGame({size,budget:90,roster:[...roster,{type:'needle'}],mines:3});
@@ -60,3 +61,20 @@ test('bot reserves enough budget for minimum hull count',()=>{
   }
  }
 });
+
+test('carrier planes can be placed on hull sections and a hit destroys the plane',async()=>{
+ const {togglePlanePlacement}=await import('../src/engine.js');
+ const g=createRealGame({size:12,budget:90,roster:[{type:'osprey'},...Array.from({length:4},()=>({type:'needle'}))]});
+ const carrier=g.players[0].ships.find(s=>s.type==='osprey');
+ assert.deepEqual(carrier.planes,[]);togglePlanePlacement(g,carrier.id,0);assert.deepEqual(carrier.planes,[0]);assert.equal(carrier.uses,1);
+ startBattle(g);g.turn=1;const enemy=g.players[0];const cell=carrier.cells[0];
+ // Replace the bot's turn with a controlled shot at the carrier's plane square.
+ act(g,{shipId:g.players[1].ships[0].id,kind:'fire',x:cell.x,y:cell.y});
+ const updated=g.players[0].ships.find(s=>s.id===carrier.id);assert.deepEqual(updated.planes,[]);assert.equal(updated.uses,0);assert.ok(g.log.some(l=>l.includes('reconnaissance plane was destroyed')));
+});
+
+test('plane placement is limited to carriers and deployment',async()=>{const {togglePlanePlacement}=await import('../src/engine.js');const g=createRealGame({roster:[{type:'osprey'},...Array.from({length:4},()=>({type:'needle'}))]});assert.throws(()=>togglePlanePlacement(g,'ship-1',0),/carrier/);togglePlanePlacement(g,'ship-0',0);assert.throws(()=>{startBattle(g);togglePlanePlacement(g,'ship-0',1)},/deployment/);});
+
+test('launching a reconnaissance plane removes it from the carrier deck',async()=>{const {togglePlanePlacement}=await import('../src/engine.js');const g=createRealGame({roster:[{type:'osprey'},...Array.from({length:4},()=>({type:'needle'}))]});togglePlanePlacement(g,'ship-0',0);startBattle(g);g.turn=0;const s=g.players[0].ships[0];act(g,{shipId:s.id,kind:'scan',x:0,y:0});assert.deepEqual(g.players[0].ships[0].planes,[]);assert.equal(g.players[0].ships[0].uses,0);});
+
+test('specialized hull copy limits are enforced',()=>{const roster=[{type:'beacon'},{type:'beacon'},{type:'needle'},{type:'needle'},{type:'needle'}];assert.throws(()=>createRealGame({budget:90,roster}),/Beacon Radar Cutter is limited to 1/);});

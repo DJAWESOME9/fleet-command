@@ -22,6 +22,9 @@ Open http://localhost:3000. Run rules tests with `npm test`.
 - Lowest purchased fleet cost goes first, with a random tie break.
 - Movement along ship facing, persistent section damage, armor, limited repairs.
 - Click a ship to select it, use its on-board movement arrows, and choose from its named contextual orders. Repair appears only for damaged ships with repair supply. Automatic captain effects are labeled.
+- Reconnaissance planes are placed on carrier hull sections during deployment. Click a carrier section after choosing “Place plane.” Launching a plane removes it from the deck; if that section is hit first, the plane is destroyed and its flight is lost.
+- Specialized hulls have roster limits: Wraith, Beacon, Bulwark, Trident, and Osprey are limited to one each; Mako and Echo allow three each. Patrol boats remain flexible fleet fillers.
+- Settings persist locally: adjust interface volume, require confirmation before orders, and choose the bot response delay.
 - Radar for surface sections/mines; sonar and hydrophone for submarines; aircraft area counts; depth charges and paired fire.
 - Four bot settings, with stronger targeting, scan use, and repairs at higher difficulty. These are heuristic bots, not paid AI models. The current Expert setting does not yet perform multi-turn search.
 - Victory, defeat, retaliation, confirmed white-flag concession, and restarting matches.
