@@ -4,21 +4,25 @@ const key=(x,y)=>`${x},${y}`;
 const alive=s=>s.cells.some(c=>c.hp>0);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 export const minimumShips=size=>({10:4,12:5,16:7,20:9})[size]??5;
-export function fleetCost(roster,mines=0){return roster.reduce((n,s)=>n+(def(s.type)?.cost||0)+(CAPTAINS.find(c=>c.id===s.captain)?.cost||0),0)+[0,2,5,9][mines];}
+export const maxShips=size=>({10:6,12:8,16:10,20:12})[size]??8;
+export const salvoActionCap=size=>({10:4,12:5,16:6,20:7})[size]??5;
+export const mineCost=mines=>[0,1,3,6,10,15][mines]??Infinity;
+export function fleetCost(roster,mines=0){return roster.reduce((n,s)=>n+(def(s.type)?.cost||0)+(CAPTAINS.find(c=>c.id===s.captain)?.cost||0),0)+mineCost(mines);}
 function cellsAt(ship,x,y,rotation){const raw=def(ship.type).cells.map(([a,b])=>{for(let i=0;i<rotation;i++)[a,b]=[-b,a];return[a,b];});const mx=Math.min(...raw.map(c=>c[0])),my=Math.min(...raw.map(c=>c[1]));return raw.map(([a,b],i)=>({...ship.cells[i],x:x+a-mx,y:y+b-my}));}
 function valid(state,p,ship,cells){return cells.every(c=>c.x>=0&&c.y>=0&&c.x<state.size&&c.y<state.size&&!p.mines.some(m=>m.x===c.x&&m.y===c.y)&&!p.ships.some(s=>s.id!==ship.id&&s.cells.some(d=>d.x===c.x&&d.y===c.y)));}
 function makePlayer(roster,mines){return {cost:fleetCost(roster,mines),ships:roster.map((r,i)=>{const d=def(r.type);return{id:`ship-${i}`,type:r.type,captain:r.captain||null,x:0,y:0,rotation:0,cells:d.cells.map((_,j)=>{const hp=(d.armor?.[j]||1)+(r.captain==='ward'&&j===0?1:0);return{x:0,y:0,hp,max:hp};}),repairs:(d.cells.length<=3?1:2)+(r.captain==='rook'?1:0),uses:d.uses,planes:[],sunk:false,captainUses:r.captain==='ortiz'?2:1};}),mines:Array.from({length:mines},()=>({x:-1,y:-1})),shots:{},intel:[],used:[],bonus:0,bonusTarget:null};}
 export function createGame({size=12,budget=45,mode='standard',repeatOnHit=false,difficulty='normal',roster,mines=0}={}){
  if(![10,12,16,20].includes(+size)||!Number.isInteger(+budget)||budget<4||budget>200)throw Error('Choose a supported board and a budget from 4 to 200.');
  if(!['standard','salvo'].includes(mode)||!['easy','normal','hard','expert'].includes(difficulty))throw Error('Invalid game settings.');
- if(!roster?.length||!Number.isInteger(mines)||mines<0||mines>3)throw Error('Add at least one ship; maximum three mines.');
+ if(!roster?.length||!Number.isInteger(mines)||mines<0||mines>5)throw Error('Add at least one ship; maximum five mines.');
  if(roster.some(s=>!def(s.type)||(s.captain&&!CAPTAINS.some(c=>c.id===s.captain))))throw Error('Unknown ship or captain.');
  for(const d of SHIPS){const count=roster.filter(s=>s.type===d.id).length;if(count>(d.maxCopies??Infinity))throw Error(`${d.name} is limited to ${d.maxCopies} per fleet.`);}
  const caps=roster.map(s=>s.captain).filter(Boolean);if(new Set(caps).size!==caps.length)throw Error('Each captain can command only one ship.');
  if(fleetCost(roster,mines)>budget)throw Error('Fleet exceeds the point budget.');
  if(roster.length<minimumShips(size))throw Error(`${size}×${size} requires at least ${minimumShips(size)} ships. Captains and mines do not count.`);
+ if(roster.length>maxShips(size))throw Error(`${size}×${size} allows at most ${maxShips(size)} ships.`);
  const botRoster=[];let remaining=budget;const preferred=['bulwark','mako','beacon','wraith','osprey','echo','trident','needle'];
- while(remaining>=4&&botRoster.length<12){const reserve=Math.max(0,minimumShips(size)-botRoster.length-1)*4;const choices=preferred.filter(t=>def(t).cost<=remaining-reserve&&botRoster.filter(r=>r.type===t).length<(def(t).maxCopies??Infinity));if(!choices.length)break;const type=pick(choices);botRoster.push({type});remaining-=def(type).cost;}
+ while(remaining>=4&&botRoster.length<maxShips(size)){const reserve=Math.max(0,minimumShips(size)-botRoster.length-1)*4;const choices=preferred.filter(t=>def(t).cost<=remaining-reserve&&botRoster.filter(r=>r.type===t).length<(def(t).maxCopies??Infinity));if(!choices.length)break;const type=pick(choices);botRoster.push({type});remaining-=def(type).cost;}
  const state={size:+size,budget:+budget,mode,repeatOnHit:mode==='standard'&&!!repeatOnHit,difficulty,phase:'deployment',turn:0,actionsLeft:0,winner:null,log:[],players:[makePlayer(roster,mines),makePlayer(botRoster,0)],resume:null,round:1};
  autoDeploy(state,0);state.players[0].ships.forEach(s=>{s.planes=[];});autoDeploy(state,1);return state;
 }
@@ -32,8 +36,9 @@ export function autoDeploy(state,player=0){
  }state.players[player]=saved;throw Error('Fleet cannot fit. Remove a ship and try again.');
 }
 export function movePlacement(state,shipId,x,y,rotation){if(state.phase!=='deployment')throw Error('Deployment has ended.');if(!Number.isInteger(x)||!Number.isInteger(y)||![0,1,2,3].includes(rotation))throw Error('Invalid placement.');const p=state.players[0],s=p.ships.find(s=>s.id===shipId);if(!s)throw Error('Select a ship.');const cs=cellsAt(s,x,y,rotation);if(!valid(state,p,s,cs))throw Error('Ship must fit on the board without overlapping ships or mines.');Object.assign(s,{x,y,rotation,cells:cs});return state;}
+export function moveMinePlacement(state,mineIndex,x,y){if(state.phase!=='deployment')throw Error('Deployment has ended.');const p=state.players[0],m=p.mines[mineIndex];if(!m)throw Error('Select a mine.');if(!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0||x>=state.size||y>=state.size)throw Error('Mine must stay on the board.');if(p.mines.some((n,i)=>i!==mineIndex&&n.x===x&&n.y===y)||p.ships.some(s=>s.cells.some(c=>c.x===x&&c.y===y)))throw Error('Mine cannot overlap a ship or another mine.');Object.assign(m,{x,y});return state;}
 export function togglePlanePlacement(state,shipId,cellIndex){if(state.phase!=='deployment')throw Error('Planes can only be placed during deployment.');const p=state.players[0],s=p.ships.find(s=>s.id===shipId),d=s&&def(s.type);if(!s||!d?.planeCount)throw Error('Select a carrier to place a plane.');if(!Number.isInteger(cellIndex)||cellIndex<0||cellIndex>=s.cells.length)throw Error('Select a carrier section.');s.planes??=[];const at=s.planes.indexOf(cellIndex);if(at>=0){s.planes.splice(at,1);return state;}if(s.planes.length>=d.planeCount)throw Error('All plane slots on this carrier are occupied.');s.planes.push(cellIndex);return state;}
-function beginTurn(state,who){state.turn=who;const p=state.players[who];p.used=[];state.actionsLeft=state.mode==='salvo'?p.ships.filter(alive).length:1;state.round++;}
+function beginTurn(state,who){state.turn=who;const p=state.players[who];p.used=[];state.actionsLeft=state.mode==='salvo'?Math.min(p.ships.filter(alive).length,salvoActionCap(state.size)):1;state.round++;}
 export function startBattle(state){if(state.phase!=='deployment')throw Error('Battle already started.');for(const p of state.players)for(const s of p.ships)if(!valid(state,p,s,s.cells))throw Error('Invalid deployment.');state.phase='battle';const [a,b]=state.players;const first=a.cost===b.cost?Math.round(Math.random()):a.cost<b.cost?0:1;beginTurn(state,first);state.log.push(`${first===0?'You':'The bot'} take the first turn. Fleet costs: ${a.cost} / ${b.cost}${a.cost===b.cost?' · tie broken randomly':''}.`);return state;}
 function say(state,text){state.log.push(text);if(state.log.length>150)state.log.shift();}
 function coord(x,y){return `${String.fromCharCode(65+x)}${y+1}`;}
@@ -41,7 +46,7 @@ function hit(state,who,x,y,depth=false){const p=state.players[who],enemy=state.p
  const s=enemy.ships.find(s=>alive(s)&&(!depth||def(s.type).submarine)&&s.cells.some(c=>c.x===x&&c.y===y&&c.hp>0));
  if(!s){if(!depth)p.shots[key(x,y)]={kind:'miss'};say(state,`${who===0?'You':'Bot'} ${depth?'depth charge':'shot'} ${coord(x,y)}: miss.`);return{hit:false};}
  const ci=s.cells.findIndex(c=>c.x===x&&c.y===y&&c.hp>0),c=s.cells[ci];c.hp--;p.shots[key(x,y)]={kind:c.hp?'hit':'destroyed'};say(state,`${who===0?'You':'Bot'} hit ${coord(x,y)}: ${c.hp?'section still intact':'section destroyed'}.`);if(s.planes?.includes(ci)&&s.uses>0){s.planes=s.planes.filter(i=>i!==ci);s.uses--;say(state,`${def(s.type).name}'s reconnaissance plane was destroyed.`);}
- if(!alive(s)){s.sunk=true;for(const c of s.cells)p.shots[key(c.x,c.y)]={kind:'sunk'};say(state,`${def(s.type).name} sunk.`);if(s.captain==='voss'&&s.captainUses){s.captainUses=0;enemy.bonus+=3;enemy.bonusTarget=null;say(state,'Voss activates Last Word: three retaliation shots.');}}
+ if(!alive(s)){s.sunk=true;for(const c of s.cells)p.shots[key(c.x,c.y)]={kind:'sunk'};say(state,`${def(s.type).name} destroyed — all sections lost.`);if(s.captain==='voss'&&s.captainUses){s.captainUses=0;enemy.bonus+=3;enemy.bonusTarget=null;say(state,'Voss activates Last Word: three retaliation shots.');}}
  return{hit:true,ship:true};}
 function requireTarget(state,x,y,w=1,h=1){if(!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0||x+w>state.size||y+h>state.size)throw Error('Choose a target area fully inside the board.');}
 function resolve(state,a){

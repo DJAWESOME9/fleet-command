@@ -15,16 +15,18 @@ Open http://localhost:3000. Run rules tests with `npm test`.
 ## Playable foundation
 
 - 10×10, 12×12, 16×16, and 20×20 boards; configurable fleet budgets.
-- Minimum fleets of 4, 5, 7, and 9 ships respectively, enforced for humans and bots. Captains and mines do not count.
-- Eight starter ships, five unique captains, and up to three escalating-cost mines.
+- Fleet sizes are limited by map: 4–6 ships on 10×10, 5–8 on 12×12, 7–10 on 16×16, and 9–12 on 20×20. Captains and mines do not count.
+- Eight starter ships, five unique captains, and up to five escalating-cost mines. Mines cost 1, 2, 3, 4, then 5 points respectively.
 - Fleet selection, captain assignment, random deployment, and manual repositioning/rotation.
-- Standard and Salvo turns; optional repeat action on normal hits in Standard.
+- Standard and Salvo turns; optional repeat action on normal hits in Standard. Salvo rounds allow one action per living ship up to a 4/5/6/7 action cap by map size.
 - Lowest purchased fleet cost goes first, with a random tie break.
 - Movement along ship facing, persistent section damage, armor, limited repairs.
 - Click a ship to select it, use its on-board movement arrows, and choose from its named contextual orders. Repair appears only for damaged ships with repair supply. Automatic captain effects are labeled.
 - Reconnaissance planes are placed on carrier hull sections during deployment. Click a carrier section after choosing “Place plane.” Launching a plane removes it from the deck; if that section is hit first, the plane is destroyed and its flight is lost.
 - Specialized hulls have roster limits: Wraith, Beacon, Bulwark, Trident, and Osprey are limited to one each; Mako and Echo allow three each. Patrol boats remain flexible fleet fillers.
 - Settings persist locally: adjust interface volume, require confirmation before orders, and choose the bot response delay.
+- Local commander progression awards XP for wins and smaller XP for losses. Level unlocks expand the ship and captain catalog; the profile and call sign are saved on this device.
+- During deployment, drag ships and mines to reposition them. Changing a selected ship's facing immediately rotates its footprint. Hover order buttons for ability details.
 - Radar for surface sections/mines; sonar and hydrophone for submarines; aircraft area counts; depth charges and paired fire.
 - Four bot settings, with stronger targeting, scan use, and repairs at higher difficulty. These are heuristic bots, not paid AI models. The current Expert setting does not yet perform multi-turn search.
 - Victory, defeat, retaliation, confirmed white-flag concession, and restarting matches.

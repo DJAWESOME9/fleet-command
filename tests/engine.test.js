@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame as createRealGame,minimumShips,startBattle,act,botStep,fleetCost,movePlacement,getView} from '../src/engine.js';
+import {createGame as createRealGame,minimumShips,maxShips,salvoActionCap,startBattle,act,botStep,fleetCost,movePlacement,moveMinePlacement,getView} from '../src/engine.js';
 // Isolated combat fixtures trim a legally purchased fleet after creation.
 // Production fleet validation is exercised directly in the tests below.
 function createGame(options={}){
@@ -17,13 +17,15 @@ function place(s,x,y){const dx=x-s.x,dy=y-s.y;s.cells.forEach(c=>{c.x+=dx;c.y+=d
 function targetShip(g,type='needle',captain=null){const other=createGame({roster:[{type,captain}]});g.players[1]=other.players[0];return g.players[1].ships[0];}
 function fire(g,c){return act(g,{shipId:g.players[0].ships[0].id,kind:'fire',x:c.x,y:c.y});}
 function variedRoster(count){const types=['needle','mako','echo'];return Array.from({length:count},(_,i)=>({type:types[i%types.length]}));}
-test('costs include escalating mines and captains',()=>assert.equal(fleetCost([{type:'needle',captain:'ward'}],3),16));
+test('costs include escalating mines and captains',()=>{assert.equal(fleetCost([{type:'needle',captain:'ward'}],3),13);assert.equal(fleetCost([{type:'needle'}],5),19);});
+test('sea mines start at one point and cap at five',()=>{assert.throws(()=>createRealGame({roster:[{type:'needle'}],mines:6}),/maximum five mines/);assert.equal(fleetCost([{type:'needle'}],1),5);});
 test('reject budget and duplicate captains',()=>{assert.throws(()=>createGame({budget:4,roster:[{type:'mako'}]}));assert.throws(()=>createGame({roster:[{type:'needle',captain:'ward'},{type:'needle',captain:'ward'}]}));});
 test('lower cost fleet opens',()=>{const g=createGame({roster:[{type:'needle'}]});startBattle(g);assert.equal(g.turn,0);});
 test('armor needs repeated shots and repeat hit grants turn',()=>{const g=game(undefined,{repeatOnHit:true});const s=targetShip(g,'bulwark');const c={...s.cells[1]};fire(g,c);assert.equal(g.turn,0);assert.equal(g.players[1].ships[0].cells[1].hp,1);fire(g,c);assert.equal(g.players[1].ships[0].cells[1].hp,0);});
 test('invalid action is atomic',()=>{const g=game();const before=structuredClone(g);assert.throws(()=>fire(g,{x:-1,y:0}));assert.deepEqual(g,before);});
-test('salvo gives one action per living ship',()=>{const g=game([{type:'needle'},{type:'mako'}],{mode:'salvo'});fire(g,{x:0,y:0});assert.equal(g.actionsLeft,1);assert.equal(g.turn,0);assert.throws(()=>fire(g,{x:1,y:0}),/already acted/);act(g,{shipId:'ship-1',kind:'fire',x:1,y:0});assert.equal(g.turn,1);});
+test('salvo gives one action per living ship up to the map cap',()=>{const g=game([{type:'needle'},{type:'mako'}],{mode:'salvo'});fire(g,{x:0,y:0});assert.equal(g.actionsLeft,1);assert.equal(g.turn,0);assert.throws(()=>fire(g,{x:1,y:0}),/already acted/);act(g,{shipId:'ship-1',kind:'fire',x:1,y:0});assert.equal(g.turn,1);const full=createRealGame({size:12,budget:90,mode:'salvo',roster:[...Array.from({length:8},()=>({type:'needle'}))]});startBattle(full);assert.equal(full.actionsLeft,salvoActionCap(12));});
 test('movement carries damage and blocks overlap',()=>{const g=createGame({roster:[{type:'bulwark'}]});movePlacement(g,'ship-0',2,2,0);startBattle(g);g.turn=0;const s=g.players[0].ships[0];s.cells[1].hp=1;act(g,{shipId:s.id,kind:'forward'});assert.equal(g.players[0].ships[0].cells[1].x,4);assert.equal(g.players[0].ships[0].cells[1].hp,1);});
+test('mines can be moved during deployment without overlapping ships',()=>{const g=createRealGame({roster:[{type:'needle'},...Array.from({length:4},()=>({type:'needle'}))],mines:1});const m=g.players[0].mines[0];const open=Array.from({length:g.size*g.size},(_,i)=>({x:i%g.size,y:Math.floor(i/g.size)})).find(c=>!g.players[0].ships.some(s=>s.cells.some(d=>d.x===c.x&&d.y===c.y)));assert.notEqual(m.x,-1);moveMinePlacement(g,0,open.x,open.y);assert.deepEqual(g.players[0].mines[0],open);assert.throws(()=>moveMinePlacement(g,0,g.players[0].ships[0].cells[0].x,g.players[0].ships[0].cells[0].y),/overlap/);});
 test('radar cannot find subs, sonar cannot find surfaces or mines',()=>{for(const [type,enemyType,kind]of [['beacon','wraith','radar'],['echo','needle','sonar']]){const g=game([{type}]);targetShip(g,enemyType);if(kind==='sonar')g.players[1].mines=[{x:0,y:0}];act(g,{shipId:'ship-0',kind});assert.equal(g.players[0].intel.length,0);}});
 test('radar can find a mine',()=>{const g=game([{type:'beacon'}]);targetShip(g,'wraith');g.players[1].mines=[{x:0,y:0}];act(g,{shipId:'ship-0',kind:'radar'});assert.deepEqual(g.players[0].intel,[{x:0,y:0,kind:'radar'}]);});
 test('repair finite, restores destroyed section on living hull',()=>{const g=game([{type:'needle'}]);g.players[0].ships[0].cells[0].hp=0;let c=g.players[0].ships[0].cells[0];act(g,{shipId:'ship-0',kind:'repair',x:c.x,y:c.y});assert.equal(g.players[0].ships[0].repairs,0);assert.equal(g.players[0].ships[0].cells[0].hp,1);g.turn=0;g.players[0].ships[0].cells[0].hp=0;assert.throws(()=>act(g,{shipId:'ship-0',kind:'repair',x:c.x,y:c.y}),/No repairs/);});
@@ -51,6 +53,7 @@ test('map sizes enforce minimum ships, ignoring captains and mines',()=>{
   assert.ok(valid.players[1].ships.length>=count);
  }
 });
+test('map sizes enforce salvo fleet caps',()=>{for(const [size] of [[10],[12],[16],[20]]){const roster=Array.from({length:maxShips(size)+1},()=>({type:'needle'}));assert.throws(()=>createRealGame({size,budget:200,roster}),/allows at most/);}});
 test('bot reserves enough budget for minimum hull count',()=>{
  for(const [size,budget] of [[10,30],[12,30],[16,30],[20,45]]){
   const roster=Array.from({length:minimumShips(size)},()=>({type:'needle'}));
