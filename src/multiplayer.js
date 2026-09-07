@@ -19,9 +19,13 @@ export class Multiplayer {
       method: body ? 'POST' : 'GET',
       headers: {'Content-Type':'application/json', ...(credential ? {Authorization:`Bearer ${credential}`} : {})},
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(8000)
+      signal: AbortSignal.timeout(65000)
     });
-    const data = await response.json().catch(() => { throw Error('Multiplayer needs the Node server. Run npm start and open its address.'); });
+    const data = await response.json().catch(() => {
+      // Hosting proxies can return HTML or plain text while the server is unavailable.
+      // Do not mistake a proxy 404 for an expired room or replay a submitted order.
+      throw Error('The multiplayer server is temporarily unavailable. Wait a minute and try again.');
+    });
     if (!response.ok) {const error=Error(data.error || 'Unable to reach the room.');error.status=response.status;throw error;}
     return data;
   }

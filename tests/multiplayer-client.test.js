@@ -39,3 +39,12 @@ test('late response from a departed room is ignored',async t=>{
   const pending=c.poll();c.leave();complete({version:2});await pending;
   assert.equal(c.session,null);assert.equal(c.state,null);
 });
+
+test('hosting proxy errors do not expire a room or suggest a local server',async t=>{
+ const {c,errors}=client(t);const previous=globalThis.fetch;
+ globalThis.fetch=async()=>new Response('Not Found',{status:404});
+ t.after(()=>{globalThis.fetch=previous;});
+ await c.poll();
+ assert.equal(c.unavailable,false);assert.equal(c.connected,false);
+ assert.match(errors[0],/temporarily unavailable/);assert.doesNotMatch(errors[0],/npm start/);
+});
