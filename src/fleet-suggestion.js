@@ -20,14 +20,14 @@ export function suggestFleet({size, budget, level=1}) {
   roster.find(r=>r.type==='needle').type=ship.id;
  }
  for(const captain of CAPTAINS.filter(c=>(c.minLevel||1)<=level).sort((a,b)=>a.cost-b.cost)) {
-  const ship=roster.find(r=>!r.captain);
+  const ship=roster.find(r=>!r.captain&&(!captain.aircraftOnly||SHIPS.find(s=>s.id===r.type).planeCount));
   if(ship&&fleetCost(roster)+captain.cost<=budget)ship.captain=captain.id;
  }
  // Prefer a variety of unlocked hulls, then spend remaining points on upgrades.
  for(let pass=0;pass<2;pass++)for(const ship of [...available].reverse()) {
   if(count(ship.id)>=(pass===0?1:(ship.maxCopies??Infinity)))continue;
   const target=[...roster].sort((a,b)=>available.find(s=>s.id===a.type).cost-available.find(s=>s.id===b.type).cost)
-   .find(r=>available.find(s=>s.id===r.type).cost<ship.cost);
+   .find(r=>(r.captain!=='park'||ship.planeCount)&&available.find(s=>s.id===r.type).cost<ship.cost);
   if(target&&fleetCost(roster)+ship.cost-available.find(s=>s.id===target.type).cost<=budget)target.type=ship.id;
  }
  // Larger budgets can support more specialist hulls, without padding with patrol boats.
@@ -40,7 +40,7 @@ export function suggestFleet({size, budget, level=1}) {
  // Newly added ships can take captains that had no available berth earlier.
  for(const captain of CAPTAINS.filter(c=>(c.minLevel||1)<=level)) {
   if(roster.some(r=>r.captain===captain.id)||fleetCost(roster)+captain.cost>budget)continue;
-  const ship=roster.find(r=>!r.captain);
+  const ship=roster.find(r=>!r.captain&&(!captain.aircraftOnly||SHIPS.find(s=>s.id===r.type).planeCount));
   if(ship)ship.captain=captain.id;
  }
  return roster;

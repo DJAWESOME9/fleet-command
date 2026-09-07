@@ -38,3 +38,12 @@ body{background:radial-gradient(ellipse at 85% 0%,#244b593f,transparent 42%),rad
 .board .sea-cell.vessel.submarine-cell:not(.dead){background:linear-gradient(135deg,#367ed0,#194c99);border-color:#82bcff;color:#e5f2ff}
 .board .sea-cell.vessel.submarine-cell.selected:not(.dead){background:linear-gradient(135deg,#5aa9ff,#286cce);border-color:#c0e1ff;box-shadow:inset 0 0 0 1px #b3d9ff88}
 .fleet-slots{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}.fleet-slots h3{font-size:14px;margin:0 0 6px}.fleet-slots p,.fleet-slot small{font-size:11px;color:var(--muted)}.fleet-slot{padding:12px 0;border-top:1px solid var(--line)}.fleet-slot label{display:block;font-size:11px}.fleet-slot input{display:block;width:100%;margin:5px 0;padding:7px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:4px}.fleet-slot button{padding:6px 12px;margin:8px 6px 0 0;font-size:11px}
+
+.opponent-presence{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;margin:0 0 12px;border:1px solid #8e7950;border-radius:6px;color:#e8cf99;background:#40351e;font-size:13px;font-weight:600}
+.opponent-presence.connected{color:#b9ffe3;background:#153e32;border-color:#4bba8a}
+.connection-notice{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:40;width:max-content;max-width:calc(100vw - 32px);padding:16px 22px;border:1px solid #81d5b2;border-radius:8px;background:#163c32;color:#d5ffee;box-shadow:0 8px 32px #0007;font-size:14px;pointer-events:none}
+
+.budget-slider input[type=range]{display:block;width:100%;height:22px;margin:8px 0 4px;padding:0;accent-color:var(--teal);cursor:pointer}
+.budget-slider output{color:var(--teal);font-variant-numeric:tabular-nums}.budget-slider small{font-size:10px;color:var(--muted)}
+.budget-slider input:disabled{cursor:default;opacity:.55}
+.ship-lock{position:absolute;inset:0;z-index:3;background:#061523dc;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#e3edf6;font-size:12px;font-weight:600;backdrop-filter:blur(2px)}.ship-lock span{font-size:28px}

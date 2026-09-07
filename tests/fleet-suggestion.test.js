@@ -5,7 +5,7 @@ import {SHIPS,CAPTAINS} from '../src/catalog.js';
 import {createGame,minimumShips,maxShips,fleetCost} from '../src/engine.js';
 
 test('suggestions are legal across boards, budgets and unlock levels',()=>{
- for(const size of [10,12,16,20])for(const budget of [30,45,60,90])for(const level of [1,2,3,4]){
+ for(const size of [10,12,16,20])for(const budget of [30,45,60,90,150,200])for(const level of [1,2,3,4,5,6,7]){
   if(budget<minimumShips(size)*4)continue;
   const roster=suggestFleet({size,budget,level});
   assert.ok(roster.length>=minimumShips(size)&&roster.length<=maxShips(size));
@@ -20,7 +20,7 @@ test('suggestions include unlocked captains when affordable and reserve minimum 
  assert.throws(()=>suggestFleet({size:20,budget:30,level:1}),/minimum/);
 });
 test('comfortable budgets favor mixed hulls instead of extra patrol boats',()=>{
- for(const level of [1,2,3,4]){
+ for(const level of [1,2,3,4,5,6,7]){
   const roster=suggestFleet({size:12,budget:45,level});
   assert.equal(roster.length,5);
   assert.ok(roster.filter(r=>r.type==='needle').length<=1);
