@@ -47,3 +47,8 @@ body{background:radial-gradient(ellipse at 85% 0%,#244b593f,transparent 42%),rad
 .budget-slider output{color:var(--teal);font-variant-numeric:tabular-nums}.budget-slider small{font-size:10px;color:var(--muted)}
 .budget-slider input:disabled{cursor:default;opacity:.55}
 .ship-lock{position:absolute;inset:0;z-index:3;background:#061523dc;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#e3edf6;font-size:12px;font-weight:600;backdrop-filter:blur(2px)}.ship-lock span{font-size:28px}
+
+.level-up-overlay{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:20px;background:#041117dc;backdrop-filter:blur(8px)}
+.level-up-card{width:min(620px,100%);max-height:90dvh;overflow:auto;padding:32px;text-align:center;box-shadow:0 24px 90px #0009;border:1px solid var(--teal)}
+.promotion-level{display:grid;place-items:center;width:86px;height:86px;margin:18px auto;border:2px solid var(--teal);border-radius:50%;font:700 38px var(--mono);color:var(--teal);background:#123a40}
+.level-up-card h2{font-size:30px;margin:12px 0}.promotion-summary{color:var(--muted);font-size:13px}.unlock-rewards{display:grid;gap:10px;margin:18px 0 24px;text-align:left}.unlock-reward{padding:16px;background:#ffffff05;border:1px solid var(--line);border-radius:8px}.unlock-reward span{font:10px var(--mono);color:var(--teal)}.unlock-reward h3{margin:7px 0;font-size:16px}.unlock-reward p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}

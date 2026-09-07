@@ -15,6 +15,7 @@ export function createServer(store = new RoomStore()) {
   return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
+      if (url.pathname === '/healthz' && req.method === 'GET') return json(res, 200, {status:'ok'});
       if (url.pathname.startsWith('/api/')) {
         if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}` && req.headers.origin !== `https://${req.headers.host}`) return json(res, 403, {error:'Use the same server for the game and API.'});
         if (req.method === 'POST' && !req.headers['content-type']?.startsWith('application/json')) return json(res, 415, {error:'JSON required.'});

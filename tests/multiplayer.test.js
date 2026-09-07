@@ -102,6 +102,7 @@ test('HTTP API supports join, authenticated reload, JSON errors and public asset
   const server=createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(()=>new Promise(resolve=>server.close(resolve)));
   const base=`http://127.0.0.1:${server.address().port}`;
+  const health=await fetch(base+'/healthz');assert.equal(health.status,200);assert.deepEqual(await health.json(),{status:'ok'});
   const post=(path,body,headers={})=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)});
   const created=await post('/api/rooms',{config,name:'Captain'});assert.equal(created.status,201);
   const host=await created.json();

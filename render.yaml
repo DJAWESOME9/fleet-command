@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: fleet-command
+    runtime: node
+    plan: free
+    buildCommand: node --check server.js
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: HOST
+        value: 0.0.0.0
