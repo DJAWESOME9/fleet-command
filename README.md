@@ -1,6 +1,6 @@
 # Fleet Command
 
-A playable, local browser prototype of a fleet-building naval deduction game. No runtime dependencies, paid services, accounts, or API keys.
+A playable browser prototype with solo play and private multiplayer of a fleet-building naval deduction game. No runtime dependencies, paid services, accounts, or API keys.
 
 ## Run
 
@@ -34,9 +34,9 @@ Open http://localhost:3000. Run rules tests with `npm test`.
 
 ## Architecture
 
-`src/catalog.js` defines content. `src/engine.js` validates and resolves actions independently of the interface. Invalid actions leave the state untouched. Bot decisions use their own discoveries rather than hidden enemy locations. `src/app.js` and `src/style.css` implement the interface. `server.js` is a loopback-only static development server, not a multiplayer backend.
+`src/catalog.js` defines content. `src/engine.js` validates and resolves actions independently of the interface. Invalid actions leave the state untouched. Bot decisions use their own discoveries rather than hidden enemy locations. `src/app.js` and `src/style.css` implement the interface. `server.js` serves the game and authenticated room API; `server/rooms.js` owns private multiplayer matches. It listens on loopback by default.
 
-The entire match currently runs in the browser. Hidden boards can therefore be inspected by someone using development tools. Do not use this prototype as a secure online multiplayer implementation. Future multiplayer must keep authoritative match state on a server and send filtered observations to each client. The prototype's human-oriented log must also become per-player event output before that migration.
+Solo matches run entirely in the browser. Multiplayer matches keep authoritative state on the Node server and send filtered views with separate logs to each commander. Local deployment drafts are validated on submission; client-supplied health and resources are never trusted.
 
 ## Rules details
 
@@ -48,4 +48,19 @@ Voss retaliation resolves before victory, including on the last ship. Pike's ext
 
 ## Later milestones
 
-The agreed design also includes larger advanced ships and captains (including silent repair and support ships), account-backed XP and unlocks, and private multiplayer with reconnect support. These are not implemented in this first playable foundation. Monetization is intentionally outside the current work.
+The agreed design also includes larger advanced ships and captains (including silent repair and support ships), account-backed XP and unlocks, persistent multiplayer rooms, matchmaking and rematches. These are not implemented in this playable foundation. Monetization is intentionally outside the current work.
+
+## Private multiplayer
+
+1. Run `npm start` and open the server address. Choose mission parameters, then **Create room**.
+2. Share the eight-character code or **Copy invite link**. Your friend opens the same server and clicks **Join room**.
+3. Each commander builds and deploys a fleet, then clicks **Ready for battle**. Ready fleets are locked; battle starts once both are ready.
+4. Existing fire, movement, repairs, reconnaissance, Salvo and captain abilities work against the other commander. Concession ends the match for both players.
+
+Private matches make all hulls and captains available to both commanders and do not award local XP. Mission parameters are fixed when the room is created. Reopen the same tab after a page refresh to reconnect; the room credential is stored in that tab's session storage. Separate tabs can play as separate commanders. Keep the tab open while playing; closing it may discard your seat credential. Disconnects reserve the seat and do not hand control to a bot.
+
+For two devices on the same network, run `HOST=0.0.0.0 npm start` and open `http://<server-computer-LAN-IP>:3000` on both devices. Create/copy the invite from that LAN address, since a localhost link works only on the server computer. `PORT` can override the port. Internet play requires hosting this Node server at a shared address; the static GitHub Pages version only supports solo play. Public hosting has not been configured by this change.
+
+The server owns combat state and validates fleet composition, deployment, turn ownership and orders. Clients receive only their own fleet, discoveries, public incoming shot markers and per-player logs; enemy fleet positions are revealed at match end. Updates poll every 1.2 seconds. Version checks reject stale/replayed orders, and interrupted orders are refreshed rather than automatically retried.
+
+Rooms live in memory, expire after 24 hours without authenticated activity, and are lost on server restart. This first version has no accounts, matchmaking, persistent room database, seat replacement or in-room rematch. Create a new room after a completed match. The development server defaults to localhost; production hosting would also need HTTPS and abuse controls.

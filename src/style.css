@@ -27,3 +27,14 @@ body{background:radial-gradient(ellipse at 85% 0%,#244b593f,transparent 42%),rad
  .sea-cell.armored-section{box-shadow:inset 0 0 0 2px #d8c47a66,0 0 0 1px #d8c47a33;color:#fff0af}.sea-cell.historical-marker{border-style:dashed;opacity:.72}.friendly .sea-cell.historical-marker{background:#293740;color:#a9bbc0}.hostile .sea-cell.historical-marker{background:#40383a;color:#f0b28f}.sea-cell.historical-marker:after{content:'?';position:absolute;right:2px;top:0;font:7px var(--mono);color:#e8d19a;opacity:.8}
 /* Keep miss dots readable on both boards, including historical markers. */
 .board .sea-cell.shot-miss:not(.vessel){font-size:28px;font-weight:700;line-height:1;color:#c5dce8;opacity:1;text-shadow:0 0 3px #c5dce833}
+
+.multiplayer-panel{margin:28px auto;max-width:1440px;padding:24px;display:flex;justify-content:space-between;align-items:center;gap:24px;border-color:#367d79}
+.multiplayer-panel h2{margin:4px 0 10px;font-size:24px}.multiplayer-panel p{color:var(--muted,#94aaa9);line-height:1.5}.multiplayer-panel small{color:#8ec4be}
+.room-controls{display:flex;align-items:end;flex-wrap:wrap;gap:12px}.room-controls input{background:#0a171e;color:#e4eeec;border:1px solid #395054;padding:12px;font:inherit;max-width:190px;text-transform:uppercase}.room-controls button{white-space:nowrap}
+@media(max-width:800px){.multiplayer-panel{margin:18px 16px;align-items:stretch;flex-direction:column}.room-controls{align-items:center}}
+/* Submarines use a distinct blue palette in the shipyard and on the board. */
+.ship-card.subsurface .ship-art{background-color:#123c69}
+.subsurface .schematic i{background:linear-gradient(90deg,#2464b9,#77baff,#285db4);border-color:#a4d0ff}
+.board .sea-cell.vessel.submarine-cell:not(.dead){background:linear-gradient(135deg,#367ed0,#194c99);border-color:#82bcff;color:#e5f2ff}
+.board .sea-cell.vessel.submarine-cell.selected:not(.dead){background:linear-gradient(135deg,#5aa9ff,#286cce);border-color:#c0e1ff;box-shadow:inset 0 0 0 1px #b3d9ff88}
+.fleet-slots{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}.fleet-slots h3{font-size:14px;margin:0 0 6px}.fleet-slots p,.fleet-slot small{font-size:11px;color:var(--muted)}.fleet-slot{padding:12px 0;border-top:1px solid var(--line)}.fleet-slot label{display:block;font-size:11px}.fleet-slot input{display:block;width:100%;margin:5px 0;padding:7px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:4px}.fleet-slot button{padding:6px 12px;margin:8px 6px 0 0;font-size:11px}
