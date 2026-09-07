@@ -17,6 +17,7 @@ export function createGame({size=12,budget=45,mode='standard',repeatOnHit=false,
  if(!roster?.length||!Number.isInteger(mines)||mines<0||mines>5)throw Error('Add at least one ship; maximum five mines.');
  if(roster.some(s=>!def(s.type)||(s.captain&&!CAPTAINS.some(c=>c.id===s.captain))))throw Error('Unknown ship or captain.');
  if(roster.some(r=>r.captain==='park'&&!def(r.type).planeCount))throw Error('Jun Park requires a carrier.');
+ if(roster.some(r=>r.captain&&def(r.type).noCaptain))throw Error('Anvil Monitor cannot carry a captain.');
  for(const d of SHIPS){const count=roster.filter(s=>s.type===d.id).length;if(count>(d.maxCopies??Infinity))throw Error(`${d.name} is limited to ${d.maxCopies} per fleet.`);}
  const caps=roster.map(s=>s.captain).filter(Boolean);if(new Set(caps).size!==caps.length)throw Error('Each captain can command only one ship.');
  if(fleetCost(roster,mines)>budget)throw Error('Fleet exceeds the point budget.');
