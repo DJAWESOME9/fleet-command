@@ -130,6 +130,7 @@ if(online.session){
 setInterval(()=>online.poll(),1200);
 render();markPlaneCells();scheduleBot();
 function readFleetSlots(){try{const slots=JSON.parse(localStorage.getItem('fleet-command-slots-v1'));return Array.from({length:3},(_,i)=>Array.isArray(slots)?slots[i]||null:null);}catch{return [null,null,null];}}
+const copyFleet=fleet=>JSON.parse(JSON.stringify(fleet));
 function mountFleetSlots(){
  if(game)return;
  const manifest=root.querySelector('.manifest');if(!manifest)return;
@@ -143,14 +144,14 @@ root.addEventListener('click',e=>{
  safe(()=>{
   if(b.dataset.slotAction==='save'){
    const name=root.querySelector(`[data-slot-name="${i}"]`).value.trim()||`Fleet ${i+1}`;
-   slots[i]={name,roster:structuredClone(roster),mines};
+   slots[i]={name,roster:copyFleet(roster),mines};
    localStorage.setItem('fleet-command-slots-v1',JSON.stringify(slots));
   }else{
    const slot=slots[i];if(!slot)return;
    if(slot.roster.some(r=>!shipDef(r.type)||!unlocked(shipDef(r.type))||(r.captain&&(!capDef(r.captain)||!unlocked(capDef(r.captain))))))throw Error('This fleet includes ships or captains you have not unlocked.');
    if(fleetCost(slot.roster,slot.mines)>config.budget)throw Error('Increase the current budget before loading this fleet.');
    if(slot.roster.length<minimumShips(config.size)||slot.roster.length>maxShips(config.size))throw Error('Choose a map whose ship limits fit this saved fleet.');
-   roster=structuredClone(slot.roster);mines=slot.mines;
+   roster=copyFleet(slot.roster);mines=slot.mines;
   }
  });
 },{capture:true});
